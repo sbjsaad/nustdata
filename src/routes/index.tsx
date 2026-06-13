@@ -1,12 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import {
-  Bell, BookOpen, Building2, CalendarDays, ChevronDown, CircleDollarSign,
-  ClipboardList, CreditCard, Eye, FileBarChart, GraduationCap, LayoutDashboard,
-  LockKeyhole, LogOut, Menu, Pencil, ReceiptText, Search, Settings, ShieldCheck,
-  Trash2, TrendingUp, UserRound, UsersRound, WalletCards, X,
+  Bell, CalendarDays, ChevronDown, Download, Eye, FileBarChart, FileUp,
+  GraduationCap, LayoutDashboard, LockKeyhole, LogOut, Menu, Pencil,
+  ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, X,
 } from "lucide-react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -79,17 +77,9 @@ function Login({ onLogin }: { onLogin: () => void }) {
   );
 }
 
-const navItems = [
-  [LayoutDashboard, 'Dashboard'], [UsersRound, 'Student Management'], [Building2, 'Boarder Students'],
-  [ReceiptText, 'Billing Management'], [WalletCards, 'Expenses Entry'], [FileBarChart, 'Reports'], [Settings, 'Settings'],
-] as const;
+const navItems = [[LayoutDashboard, 'Dashboard'], [FileBarChart, 'Reports']] as const;
 
-const revenueData = [
-  { month: 'Jan', collected: 32, due: 12 }, { month: 'Feb', collected: 38, due: 10 }, { month: 'Mar', collected: 35, due: 14 },
-  { month: 'Apr', collected: 46, due: 9 }, { month: 'May', collected: 50, due: 8 }, { month: 'Jun', collected: 57, due: 11 },
-];
-
-const students = [
+const records = [
   ['CMS-21-1042', 'Areeba Khan', '86,500', '86,500', '0', 'Paid', '10 Jun 2026'],
   ['CMS-22-0874', 'Hamza Siddiqui', '91,200', '60,000', '31,200', 'Partial', '09 Jun 2026'],
   ['CMS-23-1138', 'Maham Raza', '78,750', '0', '78,750', 'Unpaid', '—'],
@@ -116,30 +106,13 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <div className="flex min-w-0 items-center gap-3"><Button variant="subtle" size="icon" className="shrink-0 lg:hidden" onClick={() => setSidebarOpen(true)}><Menu /></Button><div className="min-w-0"><p className="truncate font-display text-lg font-bold sm:text-xl">Northbridge University</p><p className="hidden text-xs text-muted-foreground sm:block">Hostel Billing Management System</p></div></div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-4"><div className="hidden items-center gap-2 border-r pr-4 text-xs text-muted-foreground md:flex"><CalendarDays className="size-4"/> Saturday, 13 June 2026</div><Button variant="subtle" size="icon" className="relative"><Bell/><span className="absolute right-2 top-2 size-2 rounded-full bg-destructive ring-2 ring-card" /></Button><Button variant="ghost" className="h-11 gap-2 px-1.5"><span className="grid size-8 place-items-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">AK</span><span className="hidden text-left sm:block"><span className="block text-xs font-bold">Ayesha Karim</span><span className="block text-[10px] text-muted-foreground">Finance Admin</span></span><ChevronDown className="hidden size-3.5 sm:block"/></Button></div>
         </header>
-        <main className="mx-auto max-w-[1560px] p-4 sm:p-7">
-          <div className="mb-7 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-sm font-semibold text-primary">Academic Year 2025–26</p><h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Administration overview</h1><p className="mt-1 text-sm text-muted-foreground">Monitor collections and manage boarder student billing.</p></div><Button variant="subtle"><FileBarChart/> Export summary</Button></div>
-          <Kpis />
-          <div className="mt-6 grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-            <section className="rounded-xl border bg-card p-5 enterprise-shadow"><div className="mb-5 flex items-start justify-between"><div><h2 className="font-bold">Revenue overview</h2><p className="text-xs text-muted-foreground">Collected and outstanding amounts · PKR in millions</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">Last 6 months</span></div><div className="h-64"><ResponsiveContainer width="100%" height="100%"><AreaChart data={revenueData}><defs><linearGradient id="revenue" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.28}/><stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)"/><XAxis dataKey="month" axisLine={false} tickLine={false} fontSize={11}/><YAxis axisLine={false} tickLine={false} fontSize={11}/><Tooltip contentStyle={{ borderRadius: 10, borderColor: 'var(--color-border)' }}/><Area type="monotone" dataKey="collected" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#revenue)"/></AreaChart></ResponsiveContainer></div></section>
-            <section className="rounded-xl border bg-card p-5 enterprise-shadow"><div className="mb-5"><h2 className="font-bold">Collection health</h2><p className="text-xs text-muted-foreground">Paid vs. pending billing</p></div><div className="h-48"><ResponsiveContainer width="100%" height="100%"><BarChart data={revenueData.slice(-4)}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)"/><XAxis dataKey="month" axisLine={false} tickLine={false} fontSize={11}/><YAxis hide/><Tooltip/><Bar dataKey="collected" fill="var(--color-primary)" radius={[5,5,0,0]}/><Bar dataKey="due" fill="var(--color-warning)" radius={[5,5,0,0]}/></BarChart></ResponsiveContainer></div><div className="mt-3 flex gap-5 text-xs"><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-primary"/>Collected</span><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-warning"/>Outstanding</span></div></section>
-          </div>
-          <BillingForm />
-          <StudentTable />
+        <main className="mx-auto w-full max-w-[1560px] p-4 sm:p-7">
+          <PageIntro active={active} />
+          {active === 'Dashboard' ? <DataEntry /> : <Reports />}
         </main>
       </div>
     </div>
   );
-}
-
-function Kpis() {
-  const items = [
-    [UsersRound, 'Total boarder students', '1,248', '+3.2%', 'bg-secondary text-secondary-foreground'],
-    [CircleDollarSign, 'Outstanding balance', 'PKR 8.42M', '-4.1%', 'bg-warning/15 text-warning'],
-    [TrendingUp, 'Amount collected', 'PKR 42.8M', '+8.6%', 'bg-success/15 text-success'],
-    [ClipboardList, 'Pending bills', '186', '14.9%', 'bg-destructive/10 text-destructive'],
-    [CreditCard, 'Monthly revenue', 'PKR 7.15M', '+6.4%', 'bg-info/10 text-info'],
-  ] as const;
-  return <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">{items.map(([Icon,label,value,delta,color]) => <article key={label} className="rounded-xl border bg-card p-4 enterprise-shadow"><div className="flex items-start justify-between"><span className={`grid size-10 place-items-center rounded-lg ${color}`}><Icon className="size-5"/></span><span className="text-[10px] font-bold text-muted-foreground">{delta}</span></div><p className="mt-4 text-xs font-semibold text-muted-foreground">{label}</p><p className="mt-1 text-xl font-extrabold tracking-tight">{value}</p></article>)}</div>;
 }
 
 const studentFields = [
