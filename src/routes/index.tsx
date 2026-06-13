@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Bell, BookOpen, Building2, CalendarDays, ChevronDown, CircleDollarSign,
   ClipboardList, CreditCard, Eye, FileBarChart, GraduationCap, LayoutDashboard,
@@ -152,7 +152,7 @@ const billingFields = [
   ['Outfit Items Charges','2000'], ['Dhobi / Uniform Washing Charges','1500'], ['Late Fee Fine','0'],
 ];
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div><Label className="mb-1.5 block text-xs font-bold text-foreground/75">{label}</Label>{children}</div>; }
+function Field({ label, children }: { label: string; children: ReactNode }) { return <div><Label className="mb-1.5 block text-xs font-bold text-foreground/75">{label}</Label>{children}</div>; }
 function FieldInput({ label, value }: { label: string; value: string }) { return <Field label={label}><Input className="h-10 bg-card" defaultValue={value}/></Field>; }
 function SelectField({ label, value, options }: { label: string; value: string; options: string[] }) { return <Field label={label}><Select defaultValue={value}><SelectTrigger className="h-10 bg-card"><SelectValue/></SelectTrigger><SelectContent>{options.map(item => <SelectItem value={item} key={item}>{item}</SelectItem>)}</SelectContent></Select></Field>; }
 
