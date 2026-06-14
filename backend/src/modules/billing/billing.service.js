@@ -11,10 +11,20 @@ export async function createBilling(data) {
 }
 
 export async function upsertBillingsFromRows(rows, meta = {}) {
-  const parsed = rows.map((row) => parseBillingRow(row, meta)).filter(Boolean);
-  const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+  const results = { created: 0, updated: 0, skipped: 0, rejected: 0, errors: [] };
 
-  for (const item of parsed) {
+  for (const row of rows) {
+    const item = parseBillingRow(row, meta);
+    if (!item) {
+      results.rejected += 1;
+      if (results.errors.length < 15) {
+        results.errors.push({
+          message: "Row skipped — missing CMS ID or headers did not match",
+        });
+      }
+      continue;
+    }
+
     try {
       const filter = {
         cmsId: item.cmsId,
@@ -36,7 +46,7 @@ export async function upsertBillingsFromRows(rows, meta = {}) {
     }
   }
 
-  return { ...results, total: parsed.length };
+  return { ...results, total: rows.length };
 }
 
 export async function getBillings(query = {}) {
@@ -90,6 +100,28 @@ export async function deleteBilling(id) {
   const billing = await Billing.findByIdAndDelete(id);
   if (!billing) throw new ApiError(404, "Billing record not found");
   return billing;
+}
+
+export async function bulkDeleteBillings({ ids = [], deleteAll = false, confirmText = "" } = {}) {
+  if (deleteAll) {
+    if (confirmText !== "DELETE ALL") {
+      throw new ApiError(
+        400,
+        'Type "DELETE ALL" to permanently delete every billing record'
+      );
+    }
+
+    const result = await Billing.deleteMany({});
+    return { deletedBillings: result.deletedCount };
+  }
+
+  const objectIds = [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
+  if (!objectIds.length) throw new ApiError(400, "No billing records selected for deletion");
+
+  objectIds.forEach((id) => parseObjectId(id, "billing ID"));
+
+  const result = await Billing.deleteMany({ _id: { $in: objectIds } });
+  return { deletedBillings: result.deletedCount, ids: objectIds };
 }
 
 export async function getBillingStats() {

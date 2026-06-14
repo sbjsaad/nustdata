@@ -12,10 +12,20 @@ export async function createInvoice(data) {
 }
 
 export async function upsertInvoicesFromRows(rows, meta = {}) {
-  const parsed = rows.map((row) => parseInvoiceRow(row, meta)).filter(Boolean);
-  const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+  const results = { created: 0, updated: 0, skipped: 0, rejected: 0, errors: [] };
 
-  for (const item of parsed) {
+  for (const row of rows) {
+    const item = parseInvoiceRow(row, meta);
+    if (!item) {
+      results.rejected += 1;
+      if (results.errors.length < 15) {
+        results.errors.push({
+          message: "Row skipped — missing Reg No / Invoice No or headers did not match",
+        });
+      }
+      continue;
+    }
+
     try {
       const filter = item.invoiceNo
         ? { invoiceNo: item.invoiceNo }
@@ -35,7 +45,7 @@ export async function upsertInvoicesFromRows(rows, meta = {}) {
     }
   }
 
-  return { ...results, total: parsed.length };
+  return { ...results, total: rows.length };
 }
 
 export async function getInvoices(query = {}) {

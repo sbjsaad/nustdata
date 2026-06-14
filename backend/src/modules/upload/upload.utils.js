@@ -8,11 +8,12 @@ export function generateBatchId() {
 }
 
 export function resolveSheetType(requestedType, rows) {
+  const headers = Object.keys(rows[0] || {});
+
   if (requestedType && requestedType !== "auto" && UPLOAD_TYPES.includes(requestedType)) {
     return requestedType;
   }
 
-  const headers = Object.keys(rows[0] || {});
   const detected = detectSheetType(headers);
   if (!detected) {
     throw new ApiError(
@@ -24,6 +25,18 @@ export function resolveSheetType(requestedType, rows) {
   return detected;
 }
 
+export function mergeUploadResults(primary, secondary, extra = {}) {
+  return {
+    created: primary.created + secondary.created,
+    updated: primary.updated + secondary.updated,
+    skipped: primary.skipped + secondary.skipped,
+    rejected: Math.max(primary.rejected || 0, secondary.rejected || 0),
+    errors: [...primary.errors, ...secondary.errors].slice(0, 20),
+    total: primary.total ?? secondary.total,
+    ...extra,
+  };
+}
+
 export function buildUploadMeta(body, batchId) {
   return {
     batchId,
@@ -33,8 +46,9 @@ export function buildUploadMeta(body, batchId) {
 }
 
 export function determineUploadStatus(results) {
-  if (results.skipped > 0 && results.created + results.updated === 0) return "failed";
-  if (results.skipped > 0) return "partial";
+  const saved = results.created + results.updated;
+  if (saved === 0) return "failed";
+  if ((results.skipped || 0) > 0 || (results.rejected || 0) > 0) return "partial";
   return "success";
 }
 

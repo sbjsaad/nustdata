@@ -1,4 +1,7 @@
 import { Student } from "./student.model.js";
+import { Billing } from "../billing/billing.model.js";
+import { Invoice } from "../invoice/invoice.model.js";
+import { ChargeEntry } from "../charge/charge.model.js";
 import { parseStudentRow, sanitizeStudentQuery, validateStudentPayload } from "./student.utils.js";
 import { ApiError } from "../../utils/apiError.js";
 import { buildPaginationMeta, parsePagination } from "../../utils/pagination.js";
@@ -15,10 +18,20 @@ export async function createStudent(data) {
 }
 
 export async function upsertStudentsFromRows(rows) {
-  const parsed = rows.map(parseStudentRow).filter(Boolean);
-  const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+  const results = { created: 0, updated: 0, skipped: 0, rejected: 0, errors: [] };
 
-  for (const item of parsed) {
+  for (const row of rows) {
+    const item = parseStudentRow(row);
+    if (!item) {
+      results.rejected += 1;
+      if (results.errors.length < 15) {
+        results.errors.push({
+          message: "Row skipped — missing CMS ID / Reg No or headers did not match",
+        });
+      }
+      continue;
+    }
+
     try {
       const existing = await Student.findOne({ cmsId: item.cmsId });
       if (existing) {
@@ -34,7 +47,7 @@ export async function upsertStudentsFromRows(rows) {
     }
   }
 
-  return { ...results, total: parsed.length };
+  return { ...results, total: rows.length };
 }
 
 export async function getStudents(query = {}) {
@@ -70,9 +83,57 @@ export async function updateStudent(cmsId, data) {
 }
 
 export async function deleteStudent(cmsId) {
-  const student = await Student.findOneAndDelete({ cmsId: String(cmsId).trim() });
+  const id = String(cmsId).trim();
+  const student = await Student.findOneAndDelete({ cmsId: id });
   if (!student) throw new ApiError(404, `Student not found with CMS ID: ${cmsId}`);
+
+  await Promise.all([
+    Billing.deleteMany({ cmsId: id }),
+    Invoice.deleteMany({ cmsId: id }),
+    ChargeEntry.deleteMany({ cmsId: id }),
+  ]);
+
   return student;
+}
+
+export async function bulkDeleteStudents({ cmsIds = [], deleteAll = false, confirmText = "" } = {}) {
+  if (deleteAll) {
+    if (confirmText !== "DELETE ALL") {
+      throw new ApiError(400, 'Type "DELETE ALL" to permanently delete every student and related billing data');
+    }
+
+    const [students, billings, invoices, charges] = await Promise.all([
+      Student.deleteMany({}),
+      Billing.deleteMany({}),
+      Invoice.deleteMany({}),
+      ChargeEntry.deleteMany({}),
+    ]);
+
+    return {
+      deletedStudents: students.deletedCount,
+      deletedBillings: billings.deletedCount,
+      deletedInvoices: invoices.deletedCount,
+      deletedCharges: charges.deletedCount,
+    };
+  }
+
+  const ids = [...new Set(cmsIds.map((id) => String(id).trim()).filter(Boolean))];
+  if (!ids.length) throw new ApiError(400, "No students selected for deletion");
+
+  const [students, billings, invoices, charges] = await Promise.all([
+    Student.deleteMany({ cmsId: { $in: ids } }),
+    Billing.deleteMany({ cmsId: { $in: ids } }),
+    Invoice.deleteMany({ cmsId: { $in: ids } }),
+    ChargeEntry.deleteMany({ cmsId: { $in: ids } }),
+  ]);
+
+  return {
+    deletedStudents: students.deletedCount,
+    deletedBillings: billings.deletedCount,
+    deletedInvoices: invoices.deletedCount,
+    deletedCharges: charges.deletedCount,
+    cmsIds: ids,
+  };
 }
 
 export async function getStudentStats() {

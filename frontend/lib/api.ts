@@ -33,8 +33,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   if (!res.ok) {
     if (res.status === 401 && auth && typeof window !== "undefined") {
+      const hadToken = !!token;
       clearAuth();
-      window.location.href = "/login";
+      if (hadToken && !window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
     }
     throw new ApiClientError(data.message || "Request failed", res.status, data.details);
   }

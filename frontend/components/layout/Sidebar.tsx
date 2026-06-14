@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clearAuth, getUser } from "@/lib/auth";
@@ -15,7 +16,7 @@ const navItems = [
   { href: "/categories", label: "Categories", icon: "📁" },
 ];
 
-export function Sidebar({
+export const Sidebar = memo(function Sidebar({
   open = false,
   onClose,
 }: {
@@ -94,4 +95,4 @@ export function Sidebar({
       </div>
     </aside>
   );
-}
+});

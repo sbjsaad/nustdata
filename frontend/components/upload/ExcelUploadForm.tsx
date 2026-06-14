@@ -9,7 +9,7 @@ import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { Alert } from "../ui/Alert";
 import { ExcelFormatGuide } from "./ExcelFormatGuide";
-import { SHEET_TYPE_LABELS, type SheetType } from "@/lib/types";
+import { SHEET_TYPE_LABELS, type SheetType, type UploadProcessResult } from "@/lib/types";
 
 const sheetOptions = Object.entries(SHEET_TYPE_LABELS).map(([value, label]) => ({
   value,
@@ -24,7 +24,7 @@ export function ExcelUploadForm() {
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const [result, setResult] = useState<UploadProcessResult | null>(null);
   const [preview, setPreview] = useState<Record<string, unknown> | null>(null);
 
   const selectedGuide = getSheetGuide(sheetType);
@@ -72,11 +72,16 @@ export function ExcelUploadForm() {
     setResult(null);
 
     try {
-      const res = await api.upload("/upload/excel", buildFormData());
-      setResult(res.data as Record<string, unknown>);
+      const res = await api.upload<UploadProcessResult>("/upload/excel", buildFormData());
+      setResult(res.data);
       setPreview(null);
+
+      if (!res.success) {
+        setError(res.message || "No records were imported");
+      }
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : "Upload failed");
+      setResult(null);
     } finally {
       setLoading(false);
     }
@@ -184,6 +189,16 @@ export function ExcelUploadForm() {
             </div>
             <p>
               <span className="font-medium">Total Rows:</span> {String(preview.totalRows)}
+              {preview.headerRowIndex != null && (
+                <span className="ml-2 text-slate-500">
+                  (header row{Number(preview.headerRowsUsed) > 1 ? "s" : ""}:{" "}
+                  {String(preview.headerRowIndex)}
+                  {Number(preview.headerRowsUsed) > 1
+                    ? ` — ${String(preview.headerRowsUsed)} rows used`
+                    : ""}
+                  )
+                </span>
+              )}
             </p>
             <p>
               <span className="font-medium">Column Headers Found:</span>
@@ -206,10 +221,93 @@ export function ExcelUploadForm() {
       )}
 
       {result && (
-        <Card title="Upload Result" subtitle="Data saved to database">
-          <pre className="overflow-auto rounded-lg bg-green-50 p-4 text-xs text-green-900">
-            {JSON.stringify(result, null, 2)}
-          </pre>
+        <Card
+          title="Upload Result"
+          subtitle={
+            result.status === "success"
+              ? "Data saved to database"
+              : result.status === "partial"
+                ? "Some rows were imported"
+                : "Import failed — no records saved"
+          }
+        >
+          <div className="space-y-4 text-sm">
+            <div
+              className={`rounded-lg border p-4 ${
+                result.status === "success"
+                  ? "border-green-200 bg-green-50 text-green-900"
+                  : result.status === "partial"
+                    ? "border-amber-200 bg-amber-50 text-amber-900"
+                    : "border-red-200 bg-red-50 text-red-900"
+              }`}
+            >
+              <p className="font-medium capitalize">Status: {result.status || result.log.status}</p>
+              <p className="mt-1">
+                Sheet type: {String(result.sheetType).replace(/_/g, " ")} · Total rows in file:{" "}
+                {result.log.totalRows}
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs text-slate-500">Created</p>
+                <p className="text-xl font-bold text-green-700">{result.results.created}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs text-slate-500">Updated</p>
+                <p className="text-xl font-bold text-blue-700">{result.results.updated}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs text-slate-500">Rejected</p>
+                <p className="text-xl font-bold text-amber-700">{result.results.rejected ?? 0}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs text-slate-500">Errors</p>
+                <p className="text-xl font-bold text-red-700">{result.results.skipped}</p>
+              </div>
+            </div>
+
+            {(result.results.billing || result.results.students) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {result.results.students && (
+                  <div className="rounded-lg border border-slate-200 bg-white p-3">
+                    <p className="text-xs font-semibold uppercase text-slate-500">Students</p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      Created {result.results.students.created} · Updated{" "}
+                      {result.results.students.updated}
+                    </p>
+                  </div>
+                )}
+                {result.results.billing && (
+                  <div className="rounded-lg border border-slate-200 bg-white p-3">
+                    <p className="text-xs font-semibold uppercase text-slate-500">Billing</p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      Created {result.results.billing.created} · Updated{" "}
+                      {result.results.billing.updated}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(result.results.rejected ?? 0) > 0 && (
+              <p className="text-slate-600">
+                Rows were rejected because required columns (CMS ID, Reg No, etc.) were missing or
+                did not match. Use Preview to check detected headers, or pick the correct sheet type.
+              </p>
+            )}
+
+            {result.results.errors && result.results.errors.length > 0 && (
+              <div>
+                <p className="mb-2 font-medium text-slate-800">Details</p>
+                <ul className="space-y-1 rounded-lg bg-slate-50 p-3 text-xs text-slate-700">
+                  {result.results.errors.slice(0, 10).map((entry, index) => (
+                    <li key={index}>• {entry.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </Card>
       )}
     </div>

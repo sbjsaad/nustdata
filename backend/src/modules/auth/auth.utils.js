@@ -39,7 +39,7 @@ export function verifySignupKey(key) {
 
 export function signToken(user) {
   return jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
+    { id: String(user._id), email: user.email, role: user.role },
     env.jwtSecret,
     { expiresIn: env.jwtExpiresIn }
   );
@@ -47,7 +47,7 @@ export function signToken(user) {
 
 export function sanitizeUser(user) {
   return {
-    id: user._id,
+    id: String(user._id),
     name: user.name,
     email: user.email,
     role: user.role,

@@ -28,7 +28,16 @@ export const updateBilling = asyncHandler(async (req, res) => {
 
 export const deleteBilling = asyncHandler(async (req, res) => {
   await billingService.deleteBilling(req.params.id);
-  res.json({ success: true, message: "Billing record deleted successfully" });
+  res.json({ success: true, message: "Billing record deleted permanently" });
+});
+
+export const bulkDeleteBillings = asyncHandler(async (req, res) => {
+  const result = await billingService.bulkDeleteBillings(req.body);
+  res.json({
+    success: true,
+    message: "Selected billing records permanently deleted",
+    data: result,
+  });
 });
 
 export const getBillingStats = asyncHandler(async (req, res) => {

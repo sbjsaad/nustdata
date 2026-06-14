@@ -15,6 +15,7 @@ export interface Student {
   fatherName?: string;
   fatherOccupation?: string;
   contactNumber?: string;
+  parentContactNumber?: string;
   email?: string;
   gender?: string;
   location?: string;
@@ -27,20 +28,32 @@ export interface BillingCharges {
   sixMonthFixCharges?: number;
   securityHM?: number;
   wrContribution?: number;
-  laundryCharges?: number;
-  umsCharges?: number;
-  sportsCharges?: number;
-  degreeCharges?: number;
-  dhobiUWash?: number;
   messingCharges?: number;
+  fine?: number;
+  utilityBillAccnMess?: number;
+  sportsCharges?: number;
+  umsCharges?: number;
+  convoChargesDE44?: number;
+  outfitItemsDE47?: number;
+  dhobiUWash?: number;
+  laundryCharges?: number;
+  degreeCharges?: number;
   processingFees?: number;
 }
 
 export interface Billing {
   _id?: string;
+  ser?: string;
   cmsId: string;
   category?: string;
   name?: string;
+  fatherName?: string;
+  fatherOccupation?: string;
+  contactNumber?: string;
+  parentContactNumber?: string;
+  email?: string;
+  gender?: string;
+  location?: string;
   charges: BillingCharges;
   totalBill: number;
   paid: number;
@@ -103,10 +116,38 @@ export interface UploadLog {
   created: number;
   updated: number;
   skipped: number;
+  rejected?: number;
   status: string;
   voucherMonth?: string;
   voucherYear?: string;
   createdAt?: string;
+}
+
+export interface UploadProcessResult {
+  results: {
+    created: number;
+    updated: number;
+    skipped: number;
+    rejected?: number;
+    total: number;
+    errors?: { message: string; cmsId?: string; regNo?: string }[];
+    billing?: {
+      created: number;
+      updated: number;
+      skipped: number;
+      rejected?: number;
+    };
+    students?: {
+      created: number;
+      updated: number;
+      skipped: number;
+      rejected?: number;
+    };
+  };
+  log: UploadLog;
+  sheetType: string;
+  saved?: number;
+  status?: string;
 }
 
 export interface DashboardStats {

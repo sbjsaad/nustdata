@@ -11,6 +11,7 @@ const uploadLogSchema = new mongoose.Schema(
     created: { type: Number, default: 0 },
     updated: { type: Number, default: 0 },
     skipped: { type: Number, default: 0 },
+    rejected: { type: Number, default: 0 },
     rowErrors: [{ cmsId: String, regNo: String, message: String }],
     voucherMonth: { type: String },
     voucherYear: { type: String },

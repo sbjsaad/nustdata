@@ -4,6 +4,7 @@ import * as billingController from "./billing.controller.js";
 const router = Router();
 
 router.get("/stats", billingController.getBillingStats);
+router.post("/bulk-delete", billingController.bulkDeleteBillings);
 router.get("/student/:cmsId", billingController.getBillingsByCmsId);
 router.get("/:id", billingController.getBillingById);
 router.get("/", billingController.getBillings);

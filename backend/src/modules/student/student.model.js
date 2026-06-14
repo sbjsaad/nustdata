@@ -20,6 +20,7 @@ const studentSchema = new mongoose.Schema(
     fatherName: { type: String, trim: true },
     fatherOccupation: { type: String, trim: true },
     contactNumber: { type: String, trim: true },
+    parentContactNumber: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     gender: { type: String, trim: true },
     location: { type: String, trim: true },

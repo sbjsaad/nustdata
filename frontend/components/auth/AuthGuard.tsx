@@ -1,35 +1,50 @@
 "use client";
 
-import { useSyncExternalStore, useEffect } from "react";
+import { useSyncExternalStore, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
+import {
+  getAuthServerSnapshot,
+  getAuthSnapshot,
+  getClientMountedSnapshot,
+  getServerMountedSnapshot,
+  subscribeAuth,
+} from "@/lib/auth";
 import { BrandLogo } from "../layout/BrandLogo";
-
-function subscribe() {
-  return () => {};
-}
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const redirected = useRef(false);
+
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    getClientMountedSnapshot,
+    getServerMountedSnapshot
+  );
+
   const authenticated = useSyncExternalStore(
-    subscribe,
-    () => isAuthenticated(),
-    () => false
+    subscribeAuth,
+    getAuthSnapshot,
+    getAuthServerSnapshot
   );
 
   useEffect(() => {
-    if (!authenticated) {
+    if (mounted && !authenticated && !redirected.current) {
+      redirected.current = true;
       router.replace("/login");
     }
-  }, [authenticated, router]);
+  }, [mounted, authenticated, router]);
 
-  if (!authenticated) {
+  if (!mounted) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50">
         <BrandLogo size="lg" />
-        <p className="text-sm text-slate-500">Checking session...</p>
+        <p className="text-sm text-slate-500">Loading...</p>
       </div>
     );
+  }
+
+  if (!authenticated) {
+    return null;
   }
 
   return <>{children}</>;

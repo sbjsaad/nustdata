@@ -2,17 +2,21 @@ import mongoose from "mongoose";
 
 const chargeSchema = new mongoose.Schema(
   {
+    arrear: { type: Number, default: 0 },
     sixMonthFixCharges: { type: Number, default: 0 },
     securityHM: { type: Number, default: 0 },
     wrContribution: { type: Number, default: 0 },
-    laundryCharges: { type: Number, default: 0 },
-    umsCharges: { type: Number, default: 0 },
-    sportsCharges: { type: Number, default: 0 },
-    degreeCharges: { type: Number, default: 0 },
-    dhobiUWash: { type: Number, default: 0 },
     messingCharges: { type: Number, default: 0 },
+    fine: { type: Number, default: 0 },
+    utilityBillAccnMess: { type: Number, default: 0 },
+    sportsCharges: { type: Number, default: 0 },
+    umsCharges: { type: Number, default: 0 },
+    convoChargesDE44: { type: Number, default: 0 },
+    outfitItemsDE47: { type: Number, default: 0 },
+    dhobiUWash: { type: Number, default: 0 },
+    laundryCharges: { type: Number, default: 0 },
+    degreeCharges: { type: Number, default: 0 },
     processingFees: { type: Number, default: 0 },
-    arrear: { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -27,6 +31,7 @@ const billingSchema = new mongoose.Schema(
     fatherName: { type: String, trim: true },
     fatherOccupation: { type: String, trim: true },
     contactNumber: { type: String, trim: true },
+    parentContactNumber: { type: String, trim: true },
     email: { type: String, trim: true },
     gender: { type: String, trim: true },
     location: { type: String, trim: true },

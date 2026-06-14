@@ -3,9 +3,14 @@ import * as uploadService from "./upload.service.js";
 
 export const uploadExcel = asyncHandler(async (req, res) => {
   const result = await uploadService.processExcelUpload(req.file, req.body);
-  res.status(201).json({
-    success: true,
-    message: "Excel uploaded and processed successfully",
+  const saved = result.saved;
+
+  res.status(saved > 0 ? 201 : 422).json({
+    success: saved > 0,
+    message:
+      saved > 0
+        ? `Imported ${saved} record(s) successfully`
+        : "No records were imported. Check that column headers match the selected sheet type, then preview the file first.",
     data: result,
   });
 });

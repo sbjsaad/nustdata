@@ -2,19 +2,33 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { BillingTrendChart } from "@/components/dashboard/BillingTrendChart";
-import { PaymentOverviewChart } from "@/components/dashboard/PaymentOverviewChart";
-import { CategoryPieChart } from "@/components/dashboard/CategoryPieChart";
-import { StudentTypeChart } from "@/components/dashboard/StudentTypeChart";
-import { ChargeBreakdownChart } from "@/components/dashboard/ChargeBreakdownChart";
-import { ManualChargesChart, UploadStatusChart } from "@/components/dashboard/UploadStatusChart";
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
 import { api, ApiClientError } from "@/lib/api";
 import { formatPKR } from "@/lib/chartUtils";
 import type { DashboardStats } from "@/lib/types";
+
+const DashboardChartsSection = dynamic(
+  () => import("@/components/dashboard/DashboardChartsSection"),
+  {
+    loading: () => (
+      <div className="animate-pulse space-y-6">
+        <div className="grid gap-6 xl:grid-cols-3">
+          <div className="h-80 rounded-xl bg-slate-200 xl:col-span-2" />
+          <div className="h-80 rounded-xl bg-slate-200" />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-72 rounded-xl bg-slate-200" />
+          ))}
+        </div>
+      </div>
+    ),
+  }
+);
 
 function DashboardSkeleton() {
   return (
@@ -90,27 +104,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-3">
-            <div className="xl:col-span-2">
-              <BillingTrendChart data={stats.billing.monthlyTrend} />
-            </div>
-            <PaymentOverviewChart
-              totalPaid={stats.billing.totalPaid}
-              totalBalance={stats.billing.totalBalance}
-              collectionRate={stats.billing.collectionRate}
-            />
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            <CategoryPieChart byCategory={stats.students.byCategory} />
-            <StudentTypeChart byType={stats.students.byType} />
-            <ChargeBreakdownChart data={stats.billing.chargeBreakdown} />
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ManualChargesChart charges={stats.charges} />
-            <UploadStatusChart summary={stats.uploads.summary} total={stats.uploads.total} />
-          </div>
+          <DashboardChartsSection stats={stats} />
 
           <Card title="Recent Uploads">
             {!stats.recentUploads?.length ? (
@@ -130,8 +124,9 @@ export default function DashboardPage() {
                     <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
                       <th className="py-2 pr-4">File</th>
                       <th className="py-2 pr-4">Type</th>
-                      <th className="py-2 pr-4">Created</th>
-                      <th className="py-2 pr-4">Updated</th>
+                      <th className="py-2 pr-4">Rows</th>
+                      <th className="py-2 pr-4">Saved</th>
+                      <th className="py-2 pr-4">Rejected</th>
                       <th className="py-2 pr-4">Status</th>
                       <th className="py-2">Date</th>
                     </tr>
@@ -141,8 +136,9 @@ export default function DashboardPage() {
                       <tr key={log.batchId} className="border-b border-slate-100">
                         <td className="max-w-[180px] truncate py-2 pr-4">{log.fileName}</td>
                         <td className="py-2 pr-4 capitalize">{log.sheetType.replace(/_/g, " ")}</td>
-                        <td className="py-2 pr-4 text-green-600">{log.created}</td>
-                        <td className="py-2 pr-4 text-blue-600">{log.updated}</td>
+                        <td className="py-2 pr-4">{log.totalRows}</td>
+                        <td className="py-2 pr-4 text-green-600">{log.created + log.updated}</td>
+                        <td className="py-2 pr-4 text-amber-600">{log.rejected ?? 0}</td>
                         <td className="py-2 pr-4">
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${

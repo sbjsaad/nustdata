@@ -85,6 +85,7 @@ export function ExcelFormatGuide({ selectedType }: { selectedType: SheetType }) 
             <ul className="mt-2 space-y-1 text-sm text-sky-800">
               <li>• {EXCEL_FILE_INFO.firstSheetOnly}</li>
               <li>• {EXCEL_FILE_INFO.autoDetect}</li>
+              <li>• {EXCEL_FILE_INFO.combinedFormat}</li>
             </ul>
           </div>
 

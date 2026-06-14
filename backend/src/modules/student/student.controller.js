@@ -23,7 +23,16 @@ export const updateStudent = asyncHandler(async (req, res) => {
 
 export const deleteStudent = asyncHandler(async (req, res) => {
   await studentService.deleteStudent(req.params.cmsId);
-  res.json({ success: true, message: "Student deleted successfully" });
+  res.json({ success: true, message: "Student and related billing data deleted permanently" });
+});
+
+export const bulkDeleteStudents = asyncHandler(async (req, res) => {
+  const result = await studentService.bulkDeleteStudents(req.body);
+  res.json({
+    success: true,
+    message: "Selected records permanently deleted",
+    data: result,
+  });
 });
 
 export const getStudentStats = asyncHandler(async (req, res) => {
