@@ -219,7 +219,7 @@ export const CATEGORY_LABELS: Record<StudentCategory, string> = {
   NS: "Nursing School",
   GC: "General Category",
   PC: "Professional College",
-  AES: "AES",
+  AES: "ASC",
 };
 
 export const STUDENT_TYPE_LABELS: Record<StudentType, string> = {

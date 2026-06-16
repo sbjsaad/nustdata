@@ -77,12 +77,40 @@ function BillingRecordCard({ bill }: { bill: Billing }) {
   );
 }
 
+function formatNumber(val?: number) {
+  if (val == null || val === 0) return "—";
+  return val.toLocaleString();
+}
+
 export function StudentProfileView({ profile }: { profile: StudentProfile }) {
   const { student, billings, invoices, charges, chargeSummary, totals } = profile;
-  const latestBilling = billings[0];
+  
+  const displayCategory = student.category === "AES" ? "ASC" : student.category;
+
+  const rowsData = billings.length > 0
+    ? billings
+    : [{
+        _id: "dummy",
+        cmsId: student.cmsId,
+        charges: {},
+        totalBill: 0,
+        paid: 0,
+        balance: 0,
+        voucherMonth: "—",
+        voucherYear: "",
+        lateFeeFine: 0
+      } as Billing];
 
   return (
     <div className="space-y-6">
+      {/* Student Basic Information Header Banner */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Student Profile</p>
+        <h1 className="mt-1.5 text-xl font-extrabold text-slate-950 sm:text-2xl md:text-3xl tracking-tight">
+          {displayCategory}-{student.de || "—"} <span className="text-slate-300 font-normal">|</span> {student.cmsId} <span className="text-slate-300 font-normal">|</span> {student.name}
+        </h1>
+      </div>
+
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="!p-4">
           <p className="text-xs text-slate-500">Total Balance</p>
@@ -102,120 +130,115 @@ export function StudentProfileView({ profile }: { profile: StudentProfile }) {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Student Information">
-          <DetailRow label="Ser" value={student.sNo} alwaysShow />
-          <DetailRow label="Cat" value={student.category} alwaysShow />
-          <DetailRow label="DE" value={student.de} alwaysShow />
-          <DetailRow label="Discp" value={student.discipline} alwaysShow />
-          <DetailRow label="CMS ID" value={student.cmsId} alwaysShow />
-          <DetailRow label="Reg No" value={student.regNo} alwaysShow />
-          <DetailRow label="Name" value={student.name} alwaysShow />
-          <DetailRow label="Father Name" value={student.fatherName} alwaysShow />
-          <DetailRow label="Father OCC" value={student.fatherOccupation} alwaysShow />
-          <DetailRow
-            label="Category"
-            value={CATEGORY_LABELS[student.category] || student.category}
-            alwaysShow
-          />
-          <DetailRow
-            label="Student Type"
-            value={STUDENT_TYPE_LABELS[student.studentType] || student.studentType}
-            alwaysShow
-          />
-          <DetailRow label="Contact (Student)" value={student.contactNumber} alwaysShow />
-          <DetailRow label="Contact (Parent)" value={student.parentContactNumber} alwaysShow />
-          <DetailRow label="Email" value={student.email} alwaysShow />
-          <DetailRow label="Gender" value={student.gender} alwaysShow />
-          <DetailRow label="Loc" value={student.location} alwaysShow />
-          {student.isDerived && (
-            <p className="mt-3 text-xs text-amber-600">
-              Profile derived from billing data (not in student master)
-            </p>
-          )}
-        </Card>
-
-        <Card title={latestBilling ? "Latest Billing Summary" : "Billing Summary"}>
-          {!latestBilling ? (
-            <p className="text-sm text-slate-500">No billing records found</p>
-          ) : (
-            <>
-              {BILLING_CHARGE_FIELDS.map(({ key, label }) => (
-                <DetailRow
-                  key={key}
-                  label={label}
-                  value={formatChargeAmount(latestBilling.charges?.[key])}
-                  alwaysShow
-                />
-              ))}
-              <DetailRow
-                label="Total Bill"
-                value={formatCurrency(latestBilling.totalBill || 0)}
-                alwaysShow
-              />
-              <DetailRow
-                label="Paid"
-                value={formatCurrency(latestBilling.paid || 0)}
-                alwaysShow
-              />
-              <DetailRow
-                label="Late Fee Fine"
-                value={formatChargeAmount(latestBilling.lateFeeFine)}
-                alwaysShow
-              />
-              <DetailRow
-                label="Balance"
-                value={formatCurrency(latestBilling.balance || 0)}
-                alwaysShow
-              />
-              <DetailRow
-                label="Date of Bills Deposited"
-                value={
-                  latestBilling.dateOfBillsDeposited
-                    ? new Date(latestBilling.dateOfBillsDeposited).toLocaleDateString()
-                    : "—"
-                }
-                alwaysShow
-              />
-            </>
-          )}
-
-          {Object.keys(chargeSummary).length > 1 && (
-            <div className="mt-4 border-t border-slate-100 pt-4">
-              <p className="mb-2 text-xs font-semibold uppercase text-slate-500">Manual Charges</p>
-              {Object.entries(chargeSummary)
-                .filter(([key]) => key !== "total")
-                .map(([type, amount]) => (
-                  <DetailRow
-                    key={type}
-                    label={CHARGE_TYPE_LABELS[type as keyof typeof CHARGE_TYPE_LABELS] || type}
-                    value={formatCurrency(amount as number)}
-                  />
-                ))}
-              <DetailRow
-                label="Total Manual Charges"
-                value={formatCurrency(chargeSummary.total || 0)}
-                alwaysShow
-              />
-            </div>
-          )}
-        </Card>
-      </div>
-
-      <Card title={`Monthly Billing (${billings.length})`}>
-        {billings.length === 0 ? (
-          <div className="space-y-2 text-sm text-slate-500">
-            <p>No billing records found</p>
-            <p className="text-xs text-amber-700">
-              Upload your combined Student Master Excel with billing columns from Upload Excel.
-              Enter Voucher Month/Year in the form if not in the file.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {billings.map((bill) => (
-              <BillingRecordCard key={bill._id} bill={bill} />
-            ))}
+      {/* Tabular Excel Sheet View of Student Record */}
+      <Card title={`Student Billing Record Spreadsheet (Excel View)`} className="overflow-hidden">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-inner max-w-full">
+          <table className="w-full text-left border-collapse text-xs font-medium text-slate-700 min-w-[2000px]">
+            <thead>
+              {/* Row 1 Header */}
+              <tr className="border-b border-slate-200 bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600 select-none">
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Ser</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Cat</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>DE</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Discp</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>CMS ID</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Name</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Father Name</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Father OCC</th>
+                <th className="px-3 py-2 border-r border-slate-200 text-center" colSpan={2}>Contact No</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Email Address</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Gender</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Loc</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center bg-indigo-50/50" rowSpan={2}>Month/Year</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Arrear</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Six Month Fix Charges</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Security H/M</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>W&R Contribution</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Messing</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Fine</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Utility Bill Accn/Mess</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Sports Charges</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>UMS Charges</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Convo Charges 1st Inst DE-44</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Outfit Items DE-47</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Dhobi U/Wash</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Laundry Charges</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Degree Charges</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Processing Fees</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center" rowSpan={2}>Late Fee Fine</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center bg-amber-50" rowSpan={2}>Total Bill</th>
+                <th className="px-3 py-2.5 border-r border-slate-200 text-center bg-green-50" rowSpan={2}>Paid</th>
+                <th className="px-3 py-2.5 text-center bg-red-50" rowSpan={2}>Balance</th>
+              </tr>
+              {/* Row 2 Header for Contact No */}
+              <tr className="border-b border-slate-200 bg-slate-100/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 select-none">
+                <th className="px-2 py-1.5 border-r border-slate-200 text-center">Student</th>
+                <th className="px-2 py-1.5 border-r border-slate-200 text-center">Parents</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {rowsData.map((row, idx) => {
+                const isDummy = row._id === "dummy";
+                const serial = idx + 1;
+                
+                return (
+                  <tr key={row._id} className="hover:bg-slate-50 transition-colors whitespace-nowrap">
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-center font-semibold text-slate-500">{student.sNo || serial}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-center font-bold">{displayCategory}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-center font-semibold">{student.de || "—"}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-center">{student.discipline || "—"}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-center font-bold text-slate-900">{student.cmsId}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 font-bold text-slate-900">{student.name}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100">{student.fatherName || "—"}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100">{student.fatherOccupation || "—"}</td>
+                    <td className="px-2 py-2.5 border-r border-slate-100 text-center font-mono text-slate-600">{student.contactNumber || "—"}</td>
+                    <td className="px-2 py-2.5 border-r border-slate-100 text-center font-mono text-slate-600">{student.parentContactNumber || "—"}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-slate-600">{student.email || "—"}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-center">{student.gender || "—"}</td>
+                    <td className={`px-3 py-2.5 border-r border-slate-100 text-center font-bold ${
+                      student.location === "KH" || student.location === "K/H"
+                        ? "bg-yellow-300 text-yellow-950 font-extrabold" 
+                        : student.location === "ASH" 
+                          ? "bg-blue-900 text-blue-100 font-extrabold" 
+                          : ""
+                    }`}>
+                      {student.location || "—"}
+                    </td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-center bg-indigo-50/30 font-semibold text-slate-900">
+                      {isDummy ? "—" : `${row.voucherMonth || ""} ${row.voucherYear || ""}`.trim()}
+                    </td>
+                    
+                    {/* Billing Charges numeric values */}
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.arrear)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.sixMonthFixCharges)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.securityHM)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.wrContribution)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono font-bold text-slate-900">{isDummy ? "—" : formatNumber(row.charges?.messingCharges)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.fine)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.utilityBillAccnMess)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.sportsCharges)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.umsCharges)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.convoChargesDE44)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.outfitItemsDE47)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.dhobiUWash)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.laundryCharges)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.degreeCharges)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono">{isDummy ? "—" : formatNumber(row.charges?.processingFees)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right font-mono text-amber-700">{isDummy ? "—" : formatNumber(row.lateFeeFine)}</td>
+                    
+                    {/* Summary Bill Values */}
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right bg-amber-50/50 font-bold text-slate-900">{isDummy ? "—" : formatNumber(row.totalBill)}</td>
+                    <td className="px-3 py-2.5 border-r border-slate-100 text-right bg-green-50/50 font-bold text-green-700">{isDummy ? "—" : formatNumber(row.paid)}</td>
+                    <td className="px-3 py-2.5 text-right bg-red-50/50 font-bold text-red-600">{isDummy ? "—" : formatNumber(row.balance)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {student.isDerived && (
+          <div className="mt-3 text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-100/50">
+            ℹ️ Profile derived from billing data (not in student master)
           </div>
         )}
       </Card>

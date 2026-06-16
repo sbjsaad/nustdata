@@ -34,7 +34,7 @@ export const Sidebar = memo(function Sidebar({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-900 text-white transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-56 shrink-0 flex-col border-r border-slate-200 bg-slate-900 text-white transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
         open ? "translate-x-0" : "-translate-x-full"
       }`}
     >
@@ -52,7 +52,7 @@ export const Sidebar = memo(function Sidebar({
         <Link href="/dashboard" onClick={onClose} className="flex items-center gap-3 pr-8">
           <BrandLogo size="md" />
           <div className="min-w-0">
-            <h1 className="truncate text-base font-bold leading-tight">NUST EME</h1>
+            <h1 className="truncate text-base font-bold leading-tight">NUST CEME</h1>
             <p className="truncate text-xs text-slate-400">Student Billing System</p>
           </div>
         </Link>
@@ -60,6 +60,56 @@ export const Sidebar = memo(function Sidebar({
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-4">
         {navItems.map((item) => {
+          if (item.label === "Dashboard") {
+            const active = pathname === "/dashboard" || pathname === "/dashboard/";
+            return (
+              <div key={item.href} className="group flex flex-col">
+                <Link
+                  href={item.href}
+                  onClick={onClose}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                    active
+                      ? "bg-indigo-600 text-white"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span>{item.icon}</span>
+                    {item.label}
+                  </span>
+                  <svg
+                    className="h-4 w-4 text-slate-400 transition-transform duration-200 group-hover:rotate-180"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Link>
+                
+                {/* Submenu on hover */}
+                <div className="max-h-0 overflow-hidden transition-all duration-300 ease-in-out pl-6 space-y-1 group-hover:max-h-48 group-hover:py-1">
+                  {[
+                    { name: "GC", query: "GC" },
+                    { name: "PC", query: "PC" },
+                    { name: "NS", query: "NS" },
+                    { name: "ASC", query: "AES" },
+                  ].map((sub) => (
+                    <Link
+                      key={sub.name}
+                      href={`/students?category=${sub.query}`}
+                      onClick={onClose}
+                      className="flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-400 hover:bg-indigo-600/20 hover:text-white transition duration-200"
+                    >
+                      <span className="mr-2 h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                      {sub.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
           const active = pathname.startsWith(item.href);
           return (
             <Link

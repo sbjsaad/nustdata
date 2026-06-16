@@ -15,8 +15,8 @@ export function BrandLogo({
 
   return (
     <Image
-      src="/nust-eme-logo.png"
-      alt="NUST EME Logo"
+      src="/eme-logo.png"
+      alt="NUST CEME Logo"
       width={sizes.px}
       height={sizes.px}
       className={`shrink-0 object-contain ${sizes.className} ${className}`}

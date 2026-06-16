@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -17,17 +18,26 @@ import { CATEGORY_LABELS, STUDENT_TYPE_LABELS, type Student } from "@/lib/types"
 
 type BulkDeleteMode = "selected" | "all" | null;
 
-export default function StudentsPage() {
+function StudentsList() {
+  const searchParams = useSearchParams();
+  const urlCategory = searchParams.get("category") || "";
+
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(urlCategory);
   const [studentType, setStudentType] = useState("");
-  const [appliedFilters, setAppliedFilters] = useState({ search: "", category: "", studentType: "" });
+  const [appliedFilters, setAppliedFilters] = useState({ search: "", category: urlCategory, studentType: "" });
   const [deleteTarget, setDeleteTarget] = useState<Student | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteMode, setBulkDeleteMode] = useState<BulkDeleteMode>(null);
   const [deleteAllConfirm, setDeleteAllConfirm] = useState("");
   const [bulkMessage, setBulkMessage] = useState("");
+
+  useEffect(() => {
+    setCategory(urlCategory);
+    setAppliedFilters((prev) => ({ ...prev, category: urlCategory }));
+    setSelectedIds([]);
+  }, [urlCategory]);
 
   const filters = useMemo(
     () => ({
@@ -261,5 +271,13 @@ export default function StudentsPage() {
         </div>
       )}
     </DashboardLayout>
+  );
+}
+
+export default function StudentsPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-slate-500">Loading page...</p>}>
+      <StudentsList />
+    </Suspense>
   );
 }
