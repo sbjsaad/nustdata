@@ -136,11 +136,17 @@ export async function bulkDeleteStudents({ cmsIds = [], deleteAll = false, confi
   };
 }
 
-export async function getStudentStats() {
+export async function getStudentStats(query = {}) {
+  const filter = {};
+
+  if (query.category) {
+    filter.category = String(query.category).toUpperCase();
+  }
+
   const [total, byCategory, byType] = await Promise.all([
-    Student.countDocuments(),
-    Student.aggregate([{ $group: { _id: "$category", count: { $sum: 1 } } }]),
-    Student.aggregate([{ $group: { _id: "$studentType", count: { $sum: 1 } } }]),
+    Student.countDocuments(filter),
+    Student.aggregate([{ $match: filter }, { $group: { _id: "$category", count: { $sum: 1 } } }]),
+    Student.aggregate([{ $match: filter }, { $group: { _id: "$studentType", count: { $sum: 1 } } }]),
   ]);
 
   return {

@@ -105,6 +105,50 @@ async function getMonthlyBillingTrend() {
     .map(({ sortKey, month, year, ...rest }) => rest);
 }
 
+async function getBillingPaidStudentCounts(query = {}) {
+  const filter = {};
+  if (query.category) filter.category = String(query.category).toUpperCase();
+
+  const rows = await Billing.aggregate([
+    { $match: { ...filter, paid: { $gt: 0 } } },
+    { $group: { _id: { category: "$category", cmsId: "$cmsId" } } },
+    { $group: { _id: "$_id.category", count: { $sum: 1 } } },
+  ]);
+
+  const counts = { NS: 0, AES: 0, PC: 0, GC: 0 };
+  rows.forEach((item) => {
+    const category = String(item._id || "UNKNOWN").toUpperCase();
+    const key = category === "ASC" ? "AES" : category;
+    if (counts[key] !== undefined) {
+      counts[key] += item.count || 0;
+    }
+  });
+
+  return counts;
+}
+
+async function getBillingBalanceStudentCounts(query = {}) {
+  const filter = {};
+  if (query.category) filter.category = String(query.category).toUpperCase();
+
+  const rows = await Billing.aggregate([
+    { $match: { ...filter, balance: { $gt: 0 } } },
+    { $group: { _id: { category: "$category", cmsId: "$cmsId" } } },
+    { $group: { _id: "$_id.category", count: { $sum: 1 } } },
+  ]);
+
+  const counts = { NS: 0, AES: 0, PC: 0, GC: 0 };
+  rows.forEach((item) => {
+    const category = String(item._id || "UNKNOWN").toUpperCase();
+    const key = category === "ASC" ? "AES" : category;
+    if (counts[key] !== undefined) {
+      counts[key] += item.count || 0;
+    }
+  });
+
+  return counts;
+}
+
 async function getBillingChargeBreakdown() {
   const [result] = await Billing.aggregate([
     {
@@ -177,22 +221,26 @@ async function getUploadSummary() {
   return Object.fromEntries(rows.map((row) => [row._id, row.count]));
 }
 
-export async function getDashboardStats() {
+export async function getDashboardStats(query = {}) {
   const [
     studentStats,
     billingStats,
     recentUploads,
     monthlyTrend,
     chargeBreakdown,
+    payingStudentsByCategory,
+    balanceStudentsByCategory,
     manualCharges,
     uploadSummary,
     invoiceTotal,
   ] = await Promise.all([
-    getStudentStats(),
-    getBillingStats(),
+    getStudentStats(query),
+    getBillingStats(query),
     getUploadLogs({ limit: 5 }),
     getMonthlyBillingTrend(),
     getBillingChargeBreakdown(),
+    getBillingPaidStudentCounts(query),
+    getBillingBalanceStudentCounts(query),
     getManualChargeStats(),
     getUploadSummary(),
     Invoice.countDocuments(),
@@ -209,6 +257,8 @@ export async function getDashboardStats() {
       collectionRate,
       monthlyTrend,
       chargeBreakdown,
+      payingStudentsByCategory,
+      balanceStudentsByCategory,
     },
     charges: manualCharges,
     invoices: { total: invoiceTotal },

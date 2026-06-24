@@ -10,11 +10,11 @@ export const CHART_COLORS = [
 ];
 
 export function formatPKR(amount: number) {
-  return `PKR ${Math.round(amount).toLocaleString()}`;
+  return Math.round(amount).toLocaleString();
 }
 
 export function formatCompactPKR(amount: number) {
-  if (amount >= 1_000_000) return `PKR ${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `PKR ${(amount / 1_000).toFixed(1)}K`;
+  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `${(amount / 1_000).toFixed(1)}K`;
   return formatPKR(amount);
 }

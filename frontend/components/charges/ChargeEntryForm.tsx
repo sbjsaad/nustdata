@@ -108,7 +108,7 @@ export function ChargeEntryForm() {
             options={chargeOptions}
           />
           <Input
-            label="Amount (PKR) *"
+            label="Amount *"
             type="number"
             min="0"
             step="0.01"

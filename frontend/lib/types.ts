@@ -162,6 +162,11 @@ export interface DashboardStats {
     totalPaid: number;
     totalBilled: number;
     collectionRate: number;
+    byCategory?: Record<string, {
+      totalBilled: number;
+      totalPaid: number;
+      totalBalance: number;
+    }>;
     monthlyTrend: {
       period: string;
       totalBill: number;
@@ -170,6 +175,8 @@ export interface DashboardStats {
       records: number;
     }[];
     chargeBreakdown: { name: string; value: number }[];
+    payingStudentsByCategory?: Record<string, number>;
+    balanceStudentsByCategory?: Record<string, number>;
   };
   charges: {
     totalEntries: number;

@@ -90,14 +90,14 @@ export const Sidebar = memo(function Sidebar({
                 {/* Submenu on hover */}
                 <div className="max-h-0 overflow-hidden transition-all duration-300 ease-in-out pl-6 space-y-1 group-hover:max-h-48 group-hover:py-1">
                   {[
-                    { name: "GC", query: "GC" },
-                    { name: "PC", query: "PC" },
                     { name: "NS", query: "NS" },
                     { name: "ASC", query: "AES" },
+                    { name: "PC", query: "PC" },
+                    { name: "GC", query: "GC" },
                   ].map((sub) => (
                     <Link
                       key={sub.name}
-                      href={`/students?category=${sub.query}`}
+                      href={`/dashboard?category=${sub.query}`}
                       onClick={onClose}
                       className="flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-400 hover:bg-indigo-600/20 hover:text-white transition duration-200"
                     >

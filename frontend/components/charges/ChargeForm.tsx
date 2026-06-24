@@ -78,7 +78,7 @@ export function ChargeForm({ initial, id, mode }: ChargeFormProps) {
         <Select label="Category" value={form.category} onChange={(e) => update("category", e.target.value)} options={categoryOptions} />
         <Select label="Student Type" value={form.studentType} onChange={(e) => update("studentType", e.target.value)} options={[{ value: "boarder", label: "Boarder" }, { value: "day_scholar", label: "Day Scholar" }]} />
         <Select label="Charge Type *" value={form.chargeType} onChange={(e) => update("chargeType", e.target.value)} options={chargeOptions} />
-        <Input label="Amount (PKR) *" type="number" min="0" step="0.01" value={form.amount} onChange={(e) => update("amount", e.target.value)} required />
+        <Input label="Amount *" type="number" min="0" step="0.01" value={form.amount} onChange={(e) => update("amount", e.target.value)} required />
         <Input label="Month" value={form.month} onChange={(e) => update("month", e.target.value)} />
         <Input label="Year" value={form.year} onChange={(e) => update("year", e.target.value)} />
         <Input label="Submitted By" value={form.submittedBy} onChange={(e) => update("submittedBy", e.target.value)} />

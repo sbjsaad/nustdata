@@ -124,16 +124,48 @@ export async function bulkDeleteBillings({ ids = [], deleteAll = false, confirmT
   return { deletedBillings: result.deletedCount, ids: objectIds };
 }
 
-export async function getBillingStats() {
-  const [total, totalBalance, totalPaid] = await Promise.all([
-    Billing.countDocuments(),
-    Billing.aggregate([{ $group: { _id: null, sum: { $sum: "$balance" } } }]),
-    Billing.aggregate([{ $group: { _id: null, sum: { $sum: "$paid" } } }]),
+export async function getBillingStats(query = {}) {
+  const filter = {};
+
+  if (query.category) {
+    filter.category = String(query.category).toUpperCase();
+  }
+
+  const [total, totalBalance, totalPaid, byCategory] = await Promise.all([
+    Billing.countDocuments(filter),
+    Billing.aggregate([{ $match: filter }, { $group: { _id: null, sum: { $sum: "$totalBill" } } }]),
+    Billing.aggregate([{ $match: filter }, { $group: { _id: null, sum: { $sum: "$paid" } } }]),
+    Billing.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$category",
+          totalBilled: { $sum: "$totalBill" },
+          totalPaid: { $sum: "$paid" },
+          totalBalance: { $sum: { $subtract: ["$totalBill", "$paid"] } },
+        },
+      },
+    ]),
   ]);
+
+  const totalBilled = totalBalance[0]?.sum || 0;
+  const totalPaidAmount = totalPaid[0]?.sum || 0;
+  const totalBalanceAmount = totalBilled - totalPaidAmount;
 
   return {
     totalRecords: total,
-    totalBalance: totalBalance[0]?.sum || 0,
-    totalPaid: totalPaid[0]?.sum || 0,
+    totalBalance: totalBalanceAmount,
+    totalPaid: totalPaidAmount,
+    totalBilled,
+    byCategory: Object.fromEntries(
+      byCategory.map((item) => [
+        item._id || "UNKNOWN",
+        {
+          totalBilled: item.totalBilled || 0,
+          totalPaid: item.totalPaid || 0,
+          totalBalance: (item.totalBilled || 0) - (item.totalPaid || 0),
+        },
+      ])
+    ),
   };
 }

@@ -16,9 +16,6 @@ export default function DashboardChartsSection({
   return (
     <>
       <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <BillingTrendChart data={stats.billing.monthlyTrend} />
-        </div>
         <PaymentOverviewChart
           totalPaid={stats.billing.totalPaid}
           totalBalance={stats.billing.totalBalance}

@@ -1,4 +1,5 @@
 import type { BillingCharges } from "./types";
+import { formatPKR } from "./chartUtils";
 
 export const BILLING_CHARGE_FIELDS: {
   key: keyof BillingCharges;
@@ -23,7 +24,7 @@ export const BILLING_CHARGE_FIELDS: {
 
 export function formatChargeAmount(value?: number) {
   if (value == null || value === 0) return "—";
-  return `PKR ${value.toLocaleString()}`;
+  return formatPKR(value);
 }
 
 export function formatDisplayValue(value?: string | number | null) {

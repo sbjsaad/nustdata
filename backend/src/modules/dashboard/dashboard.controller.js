@@ -2,7 +2,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import * as dashboardService from "./dashboard.service.js";
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
-  const stats = await dashboardService.getDashboardStats();
+  const stats = await dashboardService.getDashboardStats(req.query);
   res.json({ success: true, data: stats });
 });
 

@@ -3,13 +3,27 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
 import { api, ApiClientError } from "@/lib/api";
 import { formatPKR } from "@/lib/chartUtils";
-import type { DashboardStats } from "@/lib/types";
+import { CATEGORY_LABELS, type DashboardStats, type StudentCategory } from "@/lib/types";
+
+const CATEGORY_ORDER = ["NS", "AES", "PC", "GC"] as const;
+
+function categoryDisplayLabel(code: (typeof CATEGORY_ORDER)[number]) {
+  return code === "AES" ? "ASC" : code;
+}
+
+function getCategoryStats(
+  byCategory: Record<string, { totalBilled?: number; totalPaid?: number; totalBalance?: number; billed?: number; paid?: number; balance?: number }>,
+  code: (typeof CATEGORY_ORDER)[number]
+) {
+  return byCategory[code] || byCategory[categoryDisplayLabel(code)] || byCategory[code === "AES" ? "ASC" : code];
+}
 
 const DashboardChartsSection = dynamic(
   () => import("@/components/dashboard/DashboardChartsSection"),
@@ -52,24 +66,36 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const category = searchParams.get("category")?.toUpperCase() || "";
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
+    setError("");
+
+    const query = category ? `?category=${encodeURIComponent(category)}` : "";
     api
-      .get<DashboardStats>("/dashboard/stats")
+      .get<DashboardStats>(`/dashboard/stats${query}`)
       .then(setStats)
       .catch((err) =>
         setError(err instanceof ApiClientError ? err.message : "Failed to load dashboard")
       )
       .finally(() => setLoading(false));
-  }, []);
+  }, [category]);
+
+  const categoryLabel = category ? CATEGORY_LABELS[category as StudentCategory] || category : "All Categories";
+  const billingPeriodLabel = (stats?.billing.monthlyTrend?.length
+    ? stats.billing.monthlyTrend[stats.billing.monthlyTrend.length - 1].period
+    : "January 2026"
+  )?.replace("January 2026", "JAN-26") || "JAN-26";
 
   return (
     <DashboardLayout
       title="Dashboard"
-      subtitle="Billing overview, student stats, and collection trends"
+      subtitle={`Billing overview, student stats, and collection trends${category ? ` for ${categoryLabel}` : ""}`}
     >
       {error && <Alert type="error" message={error} className="mb-6" />}
 
@@ -77,29 +103,88 @@ export default function DashboardPage() {
         <DashboardSkeleton />
       ) : stats ? (
         <div className="space-y-6">
+          {category && (
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700">
+              Showing dashboard totals for {categoryLabel}
+            </div>
+          )}
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+            <span className="mt-1 block text-lg font-semibold text-red-600">
+              {billingPeriodLabel}
+            </span>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               title="Total Students"
               value={stats.students.total}
-              subtitle="All categories"
+              subtitle={category ? `${categoryLabel} students` : "All categories"}
+              variant="emerald"
+              breakdown={(() => {
+                return CATEGORY_ORDER.map((code) => ({
+                  code,
+                  label: categoryDisplayLabel(code),
+                  value: stats.students.byCategory[code] || 0,
+                }));
+              })()}
               icon={<span>🎓</span>}
             />
             <StatCard
-              title="Billing Records"
-              value={stats.billing.totalRecords}
-              subtitle={`${stats.billing.collectionRate}% collection rate`}
+              title="Total Amount Generated"
+              value={formatPKR(stats.billing.totalBilled ?? 0)}
+              subtitle="Total billed amount"
+              variant="amber"
+              breakdown={(() => {
+                const byCat = stats.billing.byCategory || {};
+                return CATEGORY_ORDER.map((code) => ({
+                  code,
+                  label: categoryDisplayLabel(code),
+                  value: formatPKR(byCat[code]?.totalBilled ?? byCat[code]?.billed ?? 0),
+                }));
+              })()}
               icon={<span>📋</span>}
             />
             <StatCard
-              title="Outstanding Balance"
-              value={formatPKR(stats.billing.totalBalance)}
-              subtitle="Unpaid amount"
+              title="Amount Paid"
+              value={formatPKR(stats.billing.totalPaid ?? 0)}
+              subtitle="Paid amount by category"
+              trend={(() => {
+                const byCount = stats.billing.payingStudentsByCategory || {};
+                return CATEGORY_ORDER.map((code) =>
+                  `${categoryDisplayLabel(code)}: ${byCount[code] ?? 0} Stds`
+                ).join(" ");
+              })()}
+              variant="sky"
+              breakdown={(() => {
+                const byCat = stats.billing.byCategory || {};
+                return CATEGORY_ORDER.map((code) => ({
+                  code,
+                  label: categoryDisplayLabel(code),
+                  value: formatPKR(byCat[code]?.totalPaid ?? byCat[code]?.paid ?? 0),
+                }));
+              })()}
               icon={<span>💳</span>}
             />
             <StatCard
-              title="Total Collected"
-              value={formatPKR(stats.billing.totalPaid)}
-              subtitle={`${stats.invoices.total} invoices on file`}
+              title="Outstanding Balance"
+              value={formatPKR(stats.billing.totalBalance ?? 0)}
+              subtitle="Balance by category"
+              trend={(() => {
+                const byCount = stats.billing.balanceStudentsByCategory || {};
+                return CATEGORY_ORDER.map((code) =>
+                  `${categoryDisplayLabel(code)}: ${byCount[code] ?? 0} Stds`
+                ).join(" ");
+              })()}
+              variant="rose"
+              breakdown={(() => {
+                const byCat = stats.billing.byCategory || {};
+                return CATEGORY_ORDER.map((code) => ({
+                  code,
+                  label: categoryDisplayLabel(code),
+                  value: formatPKR(getCategoryStats(byCat, code)?.totalBalance ?? getCategoryStats(byCat, code)?.balance ?? 0),
+                }));
+              })()}
               icon={<span>✅</span>}
             />
           </div>

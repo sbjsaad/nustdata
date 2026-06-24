@@ -13,10 +13,11 @@ import {
   formatChargeAmount,
   formatDisplayValue,
 } from "@/lib/billingFields";
+import { formatPKR } from "@/lib/chartUtils";
 import { Card } from "../ui/Card";
 
 function formatCurrency(amount: number) {
-  return `PKR ${amount.toLocaleString()}`;
+  return formatPKR(amount || 0);
 }
 
 function DetailRow({

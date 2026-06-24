@@ -37,7 +37,12 @@ function StudentDetailContent({ cmsId }: { cmsId: string }) {
 
   return (
     <>
-      {loading && <p className="text-sm text-slate-500">Loading student details...</p>}
+      {loading && (
+        <div className="flex items-center gap-3 py-4">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <p className="text-sm text-slate-500">Loading student details...</p>
+        </div>
+      )}
       {error && <Alert type="error" message={error} />}
       {profile && <StudentProfileView profile={profile} />}
     </>
