@@ -9,6 +9,7 @@ import { BrandLogo } from "./BrandLogo";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/students", label: "Students", icon: "🎓" },
+  { href: "/tabular-data", label: "Tabular Data", icon: "🗂️" },
   { href: "/billing", label: "Billing", icon: "📋" },
   { href: "/invoices", label: "Invoices", icon: "🧾" },
   { href: "/charges", label: "Charges", icon: "💰" },

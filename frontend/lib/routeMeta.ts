@@ -43,6 +43,9 @@ export function getDefaultPageMeta(pathname: string): PageMeta {
   if (pathname === "/categories") {
     return { title: "Categories", subtitle: "NS, GC, PC, AES — create, update, delete" };
   }
+  if (pathname === "/tabular-data") {
+    return { title: "Tabular Data", subtitle: "Category-wise student registry and details in tabular format" };
+  }
 
   const studentMatch = pathname.match(/^\/students\/([^/]+)(?:\/edit)?$/);
   if (studentMatch) {

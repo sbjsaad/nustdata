@@ -166,6 +166,9 @@ export interface DashboardStats {
       totalBilled: number;
       totalPaid: number;
       totalBalance: number;
+      billed?: number;
+      paid?: number;
+      balance?: number;
     }>;
     monthlyTrend: {
       period: string;
